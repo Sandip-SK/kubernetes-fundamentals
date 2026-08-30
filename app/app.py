@@ -6,7 +6,7 @@ app = Flask(__name__)
 @app.route("/")
 def home():
     return {
-        "message": "Hello from Kubernetes!",
+        "message": "Hello from Kubernetes! v2",
         "hostname": socket.gethostname()
     }
 

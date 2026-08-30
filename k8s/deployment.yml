@@ -4,6 +4,11 @@ metadata:
   name: kubernetes-fundamentals
 spec:
   replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: kubernetes-fundamentals
@@ -11,10 +16,11 @@ spec:
     metadata:
       labels:
         app: kubernetes-fundamentals
+        version: v2
     spec:
       containers:
         - name: api
-          image: kubernetes-fundamentals:1.0
+          image: kubernetes-fundamentals:2.0
           resources:
             requests:
               memory: "64Mi"
@@ -24,3 +30,21 @@ spec:
               cpu: "500m"
           ports:
             - containerPort: 5000
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            failureThreshold: 30
+            periodSeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
