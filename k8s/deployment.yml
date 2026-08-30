@@ -30,6 +30,11 @@ spec:
               cpu: "500m"
           ports:
             - containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: kubernetes-fundamentals-configmap
+            - secretRef:
+                name: kubernetes-fundamentals-secret
           startupProbe:
             httpGet:
               path: /health
