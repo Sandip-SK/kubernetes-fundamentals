@@ -1,68 +1,155 @@
 # Kubernetes Fundamentals
 
-A minimal example app and Kubernetes manifests to demonstrate building, containerizing, and deploying a simple Python web application.
+This project demonstrates a simple Flask application deployed on Kubernetes with common production-style resources such as health probes, autoscaling, ingress, secrets, config maps, persistent storage, and resilience policies.
 
-Contents
-- app/: simple Flask app, Dockerfile, and Python deps
-- k8s/: Kubernetes manifests (Deployment, Pod)
+## Project structure
 
-Prerequisites
+- `app/app.py` – Flask API with `/` and `/health` endpoints
+- `app/Dockerfile` – container image definition
+- `app/requirements.txt` – Python dependencies
+- `k8s/` – Kubernetes manifests for deployment, networking, scaling, configuration, and storage
+
+## Application behavior
+
+The Python app exposes:
+
+- `/` → returns a JSON message and hostname
+- `/health` → returns `{"status": "healthy"}`
+
+This makes it suitable for Kubernetes startup, readiness, and liveness probes.
+
+## Prerequisites
+
 - Docker
-- kubectl configured for your cluster (or [minikube](https://minikube.sigs.k8s.io/) / kind)
-- Python 3.9+ (for local runs)
+- `kubectl` configured to a cluster
+- Python 3.9+
+- Optional: NGINX Ingress Controller for the Ingress manifest
 
-Run locally
-1. Create and activate a virtual environment (optional):
+## Run locally
 
-```
+1. Create and activate a virtual environment:
+
+```bash
 python -m venv .venv
 .venv\Scripts\activate
 ```
 
-2. Install dependencies and run:
+2. Install dependencies and run the app:
 
-```
+```bash
 pip install -r app/requirements.txt
 python app/app.py
 ```
 
-Build and run with Docker
+3. Test locally:
 
-```
-docker build -t kubernetes-fundamentals:latest -f app/Dockerfile app/
-docker run -p 5000:5000 kubernetes-fundamentals:latest
-```
-
-Push to a registry (example for Docker Hub):
-
-```
-docker tag kubernetes-fundamentals:latest <your-dockerhub-username>/kubernetes-fundamentals:latest
-docker push <your-dockerhub-username>/kubernetes-fundamentals:latest
+```bash
+curl http://localhost:5000/
+curl http://localhost:5000/health
 ```
 
-Kubernetes deployment
-Apply the manifests in the `k8s/` folder:
+## Build and run with Docker
 
+```bash
+docker build -t kubernetes-fundamentals:2.0 -f app/Dockerfile app/
+docker run -p 5000:5000 kubernetes-fundamentals:2.0
 ```
+
+## Kubernetes deployment
+
+Apply the manifests in the order below:
+
+```bash
+kubectl apply -f k8s/configmap.yml
+kubectl apply -f k8s/secret.yml
+kubectl apply -f k8s/postgres-pvc.yml
 kubectl apply -f k8s/deployment.yml
-kubectl apply -f k8s/pod.yml
+kubectl apply -f k8s/service.yml
+kubectl apply -f k8s/ingress.yml
+kubectl apply -f k8s/hpa.yml
+kubectl apply -f k8s/pdb.yml
+kubectl apply -f k8s/allow-only-testclient-np.yml
 ```
 
-Check status:
+Optional storage demonstration pod:
 
+```bash
+kubectl apply -f k8s/storage-test.yml
 ```
+
+To test a workload with resource pressure:
+
+```bash
+kubectl apply -f k8s/pending-pod.yml
+```
+
+## Check workload status
+
+```bash
 kubectl get pods
-kubectl get deployments
+kubectl get deploy
+kubectl get svc
+kubectl get ingress
+kubectl get hpa
 kubectl describe pod <pod-name>
 ```
 
-Cleanup
+## Accessing the app
 
+The Ingress manifest routes requests for `api.local` to the service.
+
+If you are using a local cluster with ingress support, add an entry such as:
+
+```text
+127.0.0.1 api.local
 ```
-kubectl delete -f k8s/pod.yml
+
+Then open:
+
+```text
+http://api.local/
+```
+
+You can also port-forward directly to the service for testing:
+
+```bash
+kubectl port-forward service/kubernetes-fundamentals 8080:80
+curl http://localhost:8080/
+```
+
+## Included Kubernetes features
+
+This repository includes examples for:
+
+- RollingUpdate deployments
+- Liveness and readiness probes
+- Resource requests and limits
+- ConfigMaps and Secrets
+- ClusterIP Service
+- Ingress routing
+- HorizontalPodAutoscaler
+- PodDisruptionBudget
+- NetworkPolicy
+- PersistentVolumeClaim attached to a test pod
+
+## Cleanup
+
+```bash
+kubectl delete -f k8s/ingress.yml
+kubectl delete -f k8s/service.yml
 kubectl delete -f k8s/deployment.yml
+kubectl delete -f k8s/hpa.yml
+kubectl delete -f k8s/pdb.yml
+kubectl delete -f k8s/allow-only-testclient-np.yml
+kubectl delete -f k8s/configmap.yml
+kubectl delete -f k8s/secret.yml
+kubectl delete -f k8s/postgres-pvc.yml
+kubectl delete -f k8s/storage-test.yml
+kubectl delete -f k8s/pending-pod.yml
 ```
 
-Notes
-- Edit `k8s/deployment.yml` to point the image to your registry if you pushed a remote image.
-- The `app/` folder contains the application entrypoint at `app/app.py` and `Dockerfile`.
+## Notes
+
+- Update `k8s/deployment.yml` to point to your own image if you push it to a registry.
+- Secret values in `k8s/secret.yml` should be populated before real use.
+- The project is intended as a learning-focused example for Kubernetes fundamentals and common deployment patterns.
