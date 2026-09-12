@@ -16,11 +16,11 @@ spec:
     metadata:
       labels:
         app: kubernetes-fundamentals
-        version: v2
+        version: v3
     spec:
       containers:
         - name: api
-          image: kubernetes-fundamentals:2.0
+          image: kubernetes-fundamentals:3.0
           resources:
             requests:
               memory: "64Mi"
