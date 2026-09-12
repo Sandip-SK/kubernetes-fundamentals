@@ -57,6 +57,9 @@ def health():
         "status": "healthy"
     }
 
+@app.route("/error")
+def error():
+    return {"error": "Internal Server Error"}, 500
 
 @app.route("/metrics")
 def metrics():
