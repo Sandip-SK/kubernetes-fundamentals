@@ -61,6 +61,11 @@ def health():
 def error():
     return {"error": "Internal Server Error"}, 500
 
+@app.route("/slow")
+def slow():
+    time.sleep(2)
+    return {"message": "Slow response"}
+
 @app.route("/metrics")
 def metrics():
     return generate_latest(), 200, {
